@@ -1,0 +1,162 @@
+version: '2'
+services:
+  fluentd:
+    image: fluent/fluentd:latest
+    #build: ./fluentd/
+    ports:
+      - "24224:5140"
+    networks:
+        app_net:
+          ipv4_address: ${NET}.23
+
+  elasticsearch_primary_master:
+    #image: ${REGISTRY}:elasticsearch
+    build: ./elasticsearch/
+    command: elasticsearch -Dscript.search=on -Dscript.groovy.sandbox.enabled=true -Dscript.engine.groovy.inline.aggs=on -Des.network.host=${NET}.10 -Dnode.data=false -Dnode.master=true -Ddiscovery.zen.ping.multicast.enabled=false -Ddiscovery.zen.ping.unicast.hosts="${NET}.11" -Dpath.repo="/backup"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    depends_on:
+      - fluentd
+    networks:
+        app_net:
+          ipv4_address: ${NET}.10
+    extends:
+      file: common-services.yml
+      service: app
+
+  elasticsearch_secondary_master:
+    #image: ${REGISTRY}:elasticsearch
+    build: ./elasticsearch/
+    command: elasticsearch -Dscript.search=on -Dscript.groovy.sandbox.enabled=true -Dscript.engine.groovy.inline.aggs=on -Des.network.host=${NET}.11 -Dnode.data=false -Dnode.master=true -Ddiscovery.zen.ping.multicast.enabled=false -Ddiscovery.zen.ping.unicast.hosts="${NET}.10" -Dpath.repo="/backup"
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+    links:
+      - elasticsearch_primary
+    depends_on:
+      - elasticsearch_primary
+    networks:
+        app_net:
+          ipv4_address: ${NET}.11
+    extends:
+      file: common-services.yml
+      service: app
+
+  elasticsearch_primary:
+    #image: ${REGISTRY}:elasticsearch
+    build: ./elasticsearch/
+    command: elasticsearch -Dscript.search=on -Dscript.groovy.sandbox.enabled=true -Dscript.engine.groovy.inline.aggs=on -Des.network.host=${NET}.12 -Dnode.data=true -Dnode.master=false -Ddiscovery.zen.ping.multicast.enabled=false -Ddiscovery.zen.ping.unicast.hosts="${NET}.10,${NET}.11" -Dpath.repo="/backup"
+    ports:
+      - "9202:9200"
+      - "9302:9300"
+    networks:
+        app_net:
+          ipv4_address: ${NET}.12
+    extends:
+      file: common-services.yml
+      service: app
+
+  elasticsearch_secondary:
+    #image: ${REGISTRY}:elasticsearch
+    build: ./elasticsearch/
+    command: elasticsearch -Dscript.search=on -Dscript.groovy.sandbox.enabled=true -Dscript.engine.groovy.inline.aggs=on -Des.network.host=${NET}.13 -Dnode.data=true -Dnode.master=false -Ddiscovery.zen.ping.multicast.enabled=false -Ddiscovery.zen.ping.unicast.hosts="${NET}.10,${NET}.11" -Dpath.repo="/backup"
+    ports:
+      - "9203:9200"
+      - "9303:9300"
+    links:
+      - elasticsearch_primary
+    depends_on:
+      - elasticsearch_primary
+    networks:
+        app_net:
+          ipv4_address: ${NET}.13
+    extends:
+      file: common-services.yml
+      service: app
+
+  elasticsearch_tertiary:
+    #image: ${REGISTRY}:elasticsearch
+    build: ./elasticsearch/
+    command: elasticsearch -Dscript.search=on -Dscript.groovy.sandbox.enabled=true -Dscript.engine.groovy.inline.aggs=on -Des.network.host=${NET}.14 -Dnode.data=true -Dnode.master=false -Ddiscovery.zen.ping.multicast.enabled=false -Ddiscovery.zen.ping.unicast.hosts="${NET}.10,${NET}.11" -Dpath.repo="/backup"
+    ports:
+      - "9204:9200"
+      - "9304:9300"
+    links:
+      - elasticsearch_primary
+    depends_on:
+      - elasticsearch_primary
+    networks:
+        app_net:
+          ipv4_address: ${NET}.14
+    extends:
+      file: common-services.yml
+      service: app
+
+  elasticsearch_gateway:
+    #image: ${REGISTRY}:elasticsearch
+    build: ./elasticsearch/
+    command: elasticsearch -Dscript.search=on -Dscript.groovy.sandbox.enabled=true -Dscript.engine.groovy.inline.aggs=on -Des.network.host=${NET}.20 -Dnode.data=false -Dnode.master=false -Ddiscovery.zen.ping.multicast.enabled=false -Ddiscovery.zen.ping.unicast.hosts="${NET}.10,${NET}.11" -Dpath.repo="/backup"
+    ports:
+      - "9210:9200"
+      - "9310:9300"
+    links:
+      - elasticsearch_primary
+    depends_on:
+      - elasticsearch_primary
+    networks:
+        app_net:
+          ipv4_address: ${NET}.20
+    extends:
+      file: common-services.yml
+      service: app
+
+  logstash:
+    #image: ${REGISTRY}:logstash
+    build: ./logstash/
+    command: logstash -f /etc/logstash/conf.d/logstash.conf
+    volumes:
+      - ./logstash/config:/etc/logstash/conf.d
+      - ./logstash/templates:/etc/logstash/templates
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    links:
+      - elasticsearch_primary
+    depends_on:
+      - elasticsearch_primary
+    networks:
+        app_net:
+          ipv4_address: ${NET}.21
+    extends:
+      file: common-services.yml
+      service: app
+
+  kibana:
+    #image: ${REGISTRY}:kibana
+    build: ./kibana/
+    volumes:
+      - ./kibana/config/:/opt/kibana/config/
+    ports:
+      - "5601:5601"
+    links:
+      - elasticsearch_primary_master
+    depends_on:
+      - elasticsearch_primary_master
+    networks:
+        app_net:
+          ipv4_address: ${NET}.22
+    extends:
+      file: common-services.yml
+      service: app
+
+networks:
+  app_net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    ipam:
+      driver: default
+      config:
+      - subnet: ${SUBNET}
+        gateway: ${GATEWAY}

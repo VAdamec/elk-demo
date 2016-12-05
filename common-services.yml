@@ -1,0 +1,11 @@
+version: '2'
+services:
+  app:
+    build: .
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: ${FLUENTDRIVER}
+        tag: "docker.elkmaster"
+    volumes:
+      - ./backup:/backup

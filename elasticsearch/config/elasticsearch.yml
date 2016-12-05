@@ -1,0 +1,47 @@
+network.host: 0.0.0.0
+node.name: ${HOSTNAME}
+path.repo: /backup
+
+script.engine.groovy.file.aggs: true
+script.engine.groovy.file.mapping: true
+script.engine.groovy.file.search: true
+script.engine.groovy.file.update: true
+script.engine.groovy.file.plugin: true
+
+script.engine.groovy.indexed.aggs: true
+script.engine.groovy.indexed.mapping: true
+script.engine.groovy.indexed.search: true
+script.engine.groovy.indexed.update: true
+script.engine.groovy.indexed.plugin: true
+
+script.engine.groovy.inline.aggs: true
+script.engine.groovy.inline.mapping: true
+script.engine.groovy.inline.search: true
+script.engine.groovy.inline.update: true
+script.engine.groovy.inline.plugin: true
+
+script.search: true
+script.inline: true
+script.indexed: true
+script.groovy.sandbox.enabled: true
+
+watcher.actions.hipchat.service:
+  default_account: hipchat-account1
+  account:
+    hipchat-account1:
+      profile: integration
+      auth_token: QRyw3Ao26fPYbj65DdF3yhcXOmg0IkgE9D7dPdNO
+      room: elk-workshop
+      message_defaults:
+        color: gray
+        format: text
+
+watcher.actions.email.service.account:
+    work:
+        profile: email_administrator
+        email_defaults:
+            from: 'John Doe <john.doe@host.domain>'
+        smtp:
+            auth: false
+            host: localhost
+            port: 25
