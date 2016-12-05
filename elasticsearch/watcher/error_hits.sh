@@ -26,7 +26,7 @@ curl -XPUT 'localhost:9200/_watcher/watch/log_event_watch?pretty' -d'
     "email_administrator" : {
       "throttle_period": "15m",
       "email" : {
-        "to" : "vaclav.adamec@avast.com"
+        "to" : "vaclav.adamec@netsuite.com"
         "subject" : "Encountered {{ctx.payload.hits.total}} errors",
         "body" : "Too many error in the system, see attached data",
         "attachments" : {

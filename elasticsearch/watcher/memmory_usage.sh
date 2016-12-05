@@ -68,7 +68,7 @@ curl -XPUT 'localhost:9200/_watcher/watch/mem_watch?pretty' -d'
         "script": "def latest = ctx.payload.aggregations.minutes.buckets[-1]; return latest.nodes.buckets.findAll { return it.memory && it.memory.value >= 75 };"
       },
       "email": {
-        "to": "vaclav.adamec@avast.com",
+        "to": "vaclav.adamec@netsuite.com",
         "subject": "Watcher Notification - HIGH MEMORY USAGE",
         "body": "Nodes with HIGH MEMORY Usage (above 75%):\n\n{{#ctx.payload._value}}\"{{key}}\" - Memory Usage is at {{memory.value}}%\n{{/ctx.payload._value}}"
       }
